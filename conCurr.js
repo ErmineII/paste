@@ -6,6 +6,7 @@ function parsecnc(str) {
    */
   const prnC = "2";
   const parens = "()$";
+  const braces = "{}";
   const brkC = "3";
   const brackets = "[]:";
   const namC = "4";
@@ -16,14 +17,14 @@ function parsecnc(str) {
   const strC = "8";
   const modC = "D";
   const comC = "C";
-  const metachars = '\t\n# []:()"\\';
+  const metachars = '\t\n# :])}"\\';
   if (!window.cncStyle) {
     const s = document.createElement("style");
     s.id = "cncStyle";
     s.innerText = `
       body.dt .A${regC} { color: #D2D2D2; }  body.lt .A${regC} { color: #000000; }
       body.dt .A${namC} { color: #D2D2D2; }  body.lt .A${namC} { color: #000000; }
-      body.dt .A${comC} { color: #898989; }  body.lt .A${comC} { color: #6A737D; }
+      body.dt .A${comC} { color: #999999; }  body.lt .A${comC} { color: #656565; }
       body.dt .A${digC} { color: #EEFFDD; }  body.lt .A${digC} { color: #332211; }
       body.dt .A${cm2C} { color: #887777; }  body.lt .A${cm2C} { color: #777788; }
       body.dt .A${modC} { color: #FFFF00; }  body.lt .A${modC} { color: #0000FF; }
@@ -51,23 +52,27 @@ function parsecnc(str) {
     if (res[i] === fnsC || res[i] === modC) {
       continue;
     }
-    if (str[i] == ":" && (res[i - 1] == brkC || res[i - 1] == prnC)) {
-      res[i] = cm2C;
-    } else if (str[i] === "!" && str[i + 1] == "#" && comment && !linecomment) {
+    if (str[i] === ":" && "($[:".includes(str[i - 1])) {
+      res[i] = escC;
+    } else if (
+      str[i] === "!" &&
+      str[i + 1] === "#" &&
+      comment &&
+      !linecomment
+    ) {
       comment--;
       col(i, comC);
       i++;
     } else if (str[i] === "#") {
       col(i, comC);
-      comment++;
-      res[++i] = comC;
-      if (str[i] === "!" && !linecomment) {
-      } else if (str[i] === "\n") {
-        comment--;
-      } else if (str[i] !== "!") {
-        linecomment = true;
-      } else {
-        comment--;
+      if (!linecomment) {
+        comment++;
+        if (str[i + 1] === "!") {
+          res[++i] = comC;
+          continue;
+        } else {
+          linecomment = true;
+        }
       }
     } else if (comment > 0) {
       col(i, comment > 1 ? cm2C : comC);
@@ -102,6 +107,8 @@ function parsecnc(str) {
       col(i, prnC);
     } else if (brackets.includes(str[i])) {
       col(i, brkC);
+    } else if (braces.includes(str[i])) {
+      col(i, escC);
     } else if (str[i] === '"') {
       col(i, strC);
       string = 2;
