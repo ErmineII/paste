@@ -96,6 +96,15 @@
     >
       count characters
     </button>
+    <input
+      type="file"
+      id="upldB"
+      title="alt+t"
+      style="font-size: 1em; height: 3em; width: 4.5em;"
+      onchange="upload()"
+    >
+      upload file
+    </input>
     <div
       style="
         position: absolute;
@@ -127,7 +136,10 @@
 
         cnc: "lang('cnc');",
         svg: "genc.innerHTML = main.value;",
-        "art.txt":"genc.style.fontSize = '7pt'; font('bigpix');"
+        "art.txt":"genc.style.fontSize = '7pt'; font('bigpix');",
+        "anim.json":`genc.style.fontSize = '7pt'; font('bigpix'); setspeed(0.2);
+        genc.innerHTML = "<pre id='animation' style='font-family: \\"bigpix\\", monospace'></pre>"+
+          "<button onclick='play()'>p l a y</button>";`
       };
       var langlist = [
         ["JavaScript", "JS"],
@@ -137,11 +149,13 @@
         ["BQN", "BQN"],
         ["conCurr", "cnc"],
         ["Rendered Svg", "svg"],
-        ["UnMiRa Screenshot", "art.txt"]
+        ["UnMiRa Screenshot", "art.txt"],
+        ["UnMiRa Animation", "anim.json"]
       ];
 
       var MODE = 0; // 0-edit; 1-JS edit; 2-view
       var fname = ""; // filename for downloading
+      var speed = 0.2; // speed for playing animations, frames per ms
 
       function md(mode) {
         MODE = mode;
@@ -231,9 +245,39 @@
         document.body.appendChild(a);
         a.click();
       }
+      function upload(){
+        const f = document.getElementById("upldB");
+        if (f.files.length <= 0) {
+          return;
+        }
+        const fr = new FileReader();
+        fr.onload = function (e) {
+          main.value = e.target.result;
+          filename(f.files.item[0].name);
+          jscd.value = jscd.value || `filename(${f.files.item(0).name})`;
+        };
+        fr.readAsText(f.files.item(0));
+      }
 
       function filename(name) {
         fname = name;
+      }
+
+      function setspeed(n){
+        speed=n;
+      }
+
+      function play(){
+        const animview = document.getElementById("animation");
+        const animation = JSON.parse(main.value);
+        const frame = function(n){
+          return function(){
+            if (n >= animation.length) return;
+            animview.innerText = animation[Math.floor(n)];
+            window.setTimeout(frame(n+speed), 1);
+          }
+        }
+        frame(0)();
       }
 
       function save(copyLink = false) {
